@@ -1,0 +1,15 @@
+build*/
+dist/
+*.egg-info/
+__pycache__/
+.pytest_cache/
+*.so
+*.pyd
+
+# Recordings and tapes are data, not source. Keep API keys out of the repo.
+*.jsonl.gz
+*.npy
+*.bin
+tapes/
+*.key
+*.pem

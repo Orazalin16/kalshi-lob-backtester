@@ -1,0 +1,28 @@
+[build-system]
+requires = ["scikit-build-core>=0.10", "pybind11>=2.13"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "klob"
+version = "0.1.0"
+description = "Order-book replay and queue-position backtester for Kalshi event contracts"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Aldiyar Orazalin" }]
+dependencies = ["numpy>=1.26"]
+
+[project.optional-dependencies]
+live = ["cryptography>=42", "websockets>=13"]
+dev = ["pytest>=8", "cryptography>=42", "websockets>=13"]
+
+[project.scripts]
+klob = "klob.cli:main"
+
+[tool.scikit-build]
+cmake.version = ">=3.20"
+cmake.build-type = "Release"
+wheel.packages = ["python/klob"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

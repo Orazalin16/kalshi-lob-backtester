@@ -1,0 +1,60 @@
+cmake_minimum_required(VERSION 3.20)
+project(klob LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
+option(KLOB_BUILD_PYTHON "Build the Python extension" ON)
+option(KLOB_BUILD_TESTS "Build C++ unit tests" OFF)
+option(KLOB_BUILD_BENCH "Build the replay benchmark" OFF)
+option(KLOB_NATIVE "Tune for the build machine (-march=native)" OFF)
+option(KLOB_SANITIZE "Build with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
+
+add_library(klob INTERFACE)
+target_include_directories(klob INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/cpp/include)
+target_compile_options(klob INTERFACE -Wall -Wextra -Wpedantic -Wconversion -Wshadow)
+if(KLOB_NATIVE)
+  target_compile_options(klob INTERFACE -march=native)
+endif()
+if(KLOB_SANITIZE)
+  target_compile_options(klob INTERFACE -fsanitize=address,undefined -fno-omit-frame-pointer)
+  target_link_options(klob INTERFACE -fsanitize=address,undefined)
+endif()
+
+if(KLOB_BUILD_PYTHON)
+  set(PYBIND11_FINDPYTHON ON)
+  find_package(pybind11 CONFIG REQUIRED)
+  pybind11_add_module(_core cpp/src/bindings.cpp)
+  target_link_libraries(_core PRIVATE klob)
+  install(TARGETS _core LIBRARY DESTINATION klob)
+endif()
+
+if(KLOB_BUILD_TESTS)
+  find_package(GTest QUIET)
+  if(NOT GTest_FOUND)
+    include(FetchContent)
+    FetchContent_Declare(
+      googletest
+      GIT_REPOSITORY https://github.com/google/googletest.git
+      GIT_TAG v1.15.2
+      GIT_SHALLOW ON)
+    set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
+  endif()
+  enable_testing()
+  add_executable(klob_tests cpp/tests/test_bitmap.cpp cpp/tests/test_book.cpp
+                 cpp/tests/test_fees.cpp cpp/tests/test_sim.cpp)
+  target_link_libraries(klob_tests PRIVATE klob GTest::gtest_main)
+  include(GoogleTest)
+  gtest_discover_tests(klob_tests)
+endif()
+
+if(KLOB_BUILD_BENCH)
+  add_executable(klob_bench cpp/bench/bench_replay.cpp)
+  target_link_libraries(klob_bench PRIVATE klob)
+endif()
